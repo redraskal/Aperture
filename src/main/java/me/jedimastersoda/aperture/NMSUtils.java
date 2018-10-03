@@ -24,7 +24,7 @@ public class NMSUtils {
     Class<?> entityPlayer = getNMSClass("EntityPlayer");
     Field field_playerConnection = entityPlayer.getDeclaredField("playerConnection");
 
-    Object entityPlayerImpl = entityPlayer.getDeclaredMethod("getHandle").invoke(craftPlayer.cast(player));
+    Object entityPlayerImpl = craftPlayer.getDeclaredMethod("getHandle").invoke(craftPlayer.cast(player));
     return field_playerConnection.get(entityPlayerImpl);
   }
 

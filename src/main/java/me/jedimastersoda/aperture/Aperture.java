@@ -1,6 +1,9 @@
 package me.jedimastersoda.aperture;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -13,6 +16,8 @@ import org.inventivetalent.packetlistener.handler.SentPacket;
 import me.jedimastersoda.aperture.listener.JoinEvent;
 
 public class Aperture extends JavaPlugin {
+
+  private Map<UUID, FileStatusRequest> requests = new HashMap<>();
 
   public void onEnable() {
     this.registerPacketHandler();
@@ -28,11 +33,16 @@ public class Aperture extends JavaPlugin {
       @Override
       public void onReceive(ReceivedPacket packet) {
         if(packet.getPacketName().equals("PacketPlayInResourcePackStatus")) {
-          Player client = packet.getPlayer();
-          String fileHash = (String) packet.getPacketValue("a");
-          Object fileStatus = packet.getPacketValue("b");
-          Bukkit.broadcastMessage("[DEBUG] " + client.getName() + " | " + fileHash + " | " + fileStatus.toString());
-          //TODO
+          try {
+            UUID fileHash = UUID.fromString((String) packet.getPacketValue("a"));
+            String fileFetchStatus = packet.getPacketValue("b").toString();
+            if(fileFetchStatus.equals("SUCCESSFULLY_LOADED") || fileFetchStatus.equals("DECLINED")) return;
+            FileStatus fileStatus = fileFetchStatus.equals("ACCEPTED") ? FileStatus.EXISTS : FileStatus.NOT_EXISTS;
+            if(requests.containsKey(fileHash)) {
+              requests.get(fileHash).complete(fileStatus);
+              requests.remove(fileHash);
+            }
+          } catch (IllegalArgumentException e) {}
         }
       }
 
@@ -43,7 +53,20 @@ public class Aperture extends JavaPlugin {
 
   public void checkClient(Player player) {
     try {
-      sendFileRequest(player, "Jigsaw/settings.json", null);
+      sendFileRequest(player, new FileStatusRequest("Jigsaw/settings.json") {
+      
+        @Override
+        public void complete(FileStatus fileStatus) {
+          Bukkit.broadcastMessage("[DEBUG] " + player.getName() + " | " + getUuid() + "/" + getFilePath() + " | " + fileStatus.toString());
+        }
+      });
+      sendFileRequest(player, new FileStatusRequest("wurst/settings.json") {
+      
+        @Override
+        public void complete(FileStatus fileStatus) {
+          Bukkit.broadcastMessage("[DEBUG] " + player.getName() + " | " + getUuid() + "/" + getFilePath() + " | " + fileStatus.toString());
+        }
+      });
     } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
         | NoSuchMethodException | SecurityException | NoSuchFieldException e) {
       e.printStackTrace();
@@ -55,7 +78,7 @@ public class Aperture extends JavaPlugin {
    * .minecraft folder.
    * 
    * @param player
-   * @param filePath
+   * @param fileStatusRequest
    * @throws SecurityException
    * @throws NoSuchMethodException
    * @throws InvocationTargetException
@@ -64,14 +87,13 @@ public class Aperture extends JavaPlugin {
    * @throws InstantiationException
    * @throws NoSuchFieldException
    */
-  public void sendFileRequest(Player player, String filePath, String fileHash) throws InstantiationException, IllegalAccessException, 
+  public void sendFileRequest(Player player, FileStatusRequest fileStatusRequest) throws InstantiationException, IllegalAccessException, 
       IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, NoSuchFieldException {
     if(!player.isOnline()) return;
-    Object packetPlayOutResourcePackSend = NMSUtils.getNMSClass("PacketPlayOutResourcePackSend");
-    String url = "level://../" + filePath;
-    if(fileHash == null) fileHash = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-    Object packetImpl = packetPlayOutResourcePackSend.getClass()
-      .getConstructor(String.class, String.class).newInstance(url, fileHash);
+    Class<?> packetPlayOutResourcePackSend = NMSUtils.getNMSClass("PacketPlayOutResourcePackSend");
+    String url = "level://../" + fileStatusRequest.getFilePath();
+    requests.put(fileStatusRequest.getUuid(), fileStatusRequest);
+    Object packetImpl = packetPlayOutResourcePackSend.getConstructor(String.class, String.class).newInstance(url, fileStatusRequest.getUuid().toString());
     NMSUtils.sendPacket(packetImpl, player);
   }
 }
