@@ -84,11 +84,11 @@ public class Aperture extends JavaPlugin {
       @Override
       public void run() {
         if(player.isOnline()) {
-          player.sendMessage("Stop using " + client + " right now! Also, nice porn stash!");
+          player.sendMessage("Please delete the " + client + " client right now from your device! Also, nice porn stash, but you should delete that too because Jesus is watching you.");
           //player.kickPlayer("Internal Exception: java.io.IOException: An existing connection was forcibly closed by the remote host");
         }
       }
-    }.runTaskLater(this, (20*10));
+    }.runTaskLater(this, (20*5));
   }
 
   /**
