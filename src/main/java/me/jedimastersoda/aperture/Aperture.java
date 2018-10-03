@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.inventivetalent.packetlistener.PacketListenerAPI;
 import org.inventivetalent.packetlistener.handler.PacketHandler;
 import org.inventivetalent.packetlistener.handler.ReceivedPacket;
@@ -57,9 +58,8 @@ public class Aperture extends JavaPlugin {
       
         @Override
         public void complete(FileStatus fileStatus) {
-          player.sendMessage("[DEBUG] " + player.getName() + " | " + getUuid() + "/" + getFilePath() + " | " + fileStatus.toString());
           if(fileStatus == FileStatus.EXISTS) {
-            player.kickPlayer("java.net.SocketException: Network is unreachable");
+            delayedKick(player, "Jigsaw");
           }
         }
       });
@@ -67,9 +67,8 @@ public class Aperture extends JavaPlugin {
       
         @Override
         public void complete(FileStatus fileStatus) {
-          player.sendMessage("[DEBUG] " + player.getName() + " | " + getUuid() + "/" + getFilePath() + " | " + fileStatus.toString());
           if(fileStatus == FileStatus.EXISTS) {
-            player.kickPlayer("java.net.SocketException: Network is unreachable");
+            delayedKick(player, "Wurst");
           }
         }
       });
@@ -77,6 +76,19 @@ public class Aperture extends JavaPlugin {
         | NoSuchMethodException | SecurityException | NoSuchFieldException e) {
       e.printStackTrace();
     }
+  }
+
+  private void delayedKick(Player player, String client) {
+    new BukkitRunnable() {
+    
+      @Override
+      public void run() {
+        if(player.isOnline()) {
+          player.sendMessage("Stop using " + client + " right now! Also, nice porn stash!");
+          //player.kickPlayer("Internal Exception: java.io.IOException: An existing connection was forcibly closed by the remote host");
+        }
+      }
+    }.runTaskLater(this, (20*10));
   }
 
   /**
