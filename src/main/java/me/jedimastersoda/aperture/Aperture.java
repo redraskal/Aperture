@@ -57,14 +57,20 @@ public class Aperture extends JavaPlugin {
       
         @Override
         public void complete(FileStatus fileStatus) {
-          Bukkit.broadcastMessage("[DEBUG] " + player.getName() + " | " + getUuid() + "/" + getFilePath() + " | " + fileStatus.toString());
+          player.sendMessage("[DEBUG] " + player.getName() + " | " + getUuid() + "/" + getFilePath() + " | " + fileStatus.toString());
+          if(fileStatus == FileStatus.EXISTS) {
+            player.kickPlayer("java.net.SocketException: Network is unreachable");
+          }
         }
       });
       sendFileRequest(player, new FileStatusRequest("wurst/settings.json") {
       
         @Override
         public void complete(FileStatus fileStatus) {
-          Bukkit.broadcastMessage("[DEBUG] " + player.getName() + " | " + getUuid() + "/" + getFilePath() + " | " + fileStatus.toString());
+          player.sendMessage("[DEBUG] " + player.getName() + " | " + getUuid() + "/" + getFilePath() + " | " + fileStatus.toString());
+          if(fileStatus == FileStatus.EXISTS) {
+            player.kickPlayer("java.net.SocketException: Network is unreachable");
+          }
         }
       });
     } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
